@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Translation Skill Assessor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for better visual appeal */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+        .card {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+        #timer {
+            font-variant-numeric: tabular-nums;
+        }
+        /* Custom radio button appearance */
+        .radio-label input:checked + .radio-tile {
+            border-color: #4f46e5;
+            background-color: #eef2ff;
+        }
+        .radio-tile {
+            transition: all 0.15s ease-in-out;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8 min-h-screen flex items-center justify-center">
+
+    <div class="w-full max-w-4xl">
+        <h1 class="text-4xl font-extrabold text-gray-900 mb-6 text-center">Translation Skill Assessor</h1>
+        <p class="text-center text-gray-600 mb-8">Measure your speed and accuracy by translating the passage from English to Mandarin Chinese.</p>
+
+        <!-- Main Assessment Card -->
+        <div class="bg-white card rounded-xl p-6 md:p-10">
+
+            <!-- Difficulty Selector -->
+            <div id="difficultySelector" class="mb-8 p-4 bg-indigo-50 rounded-lg">
+                <h2 class="text-lg font-semibold text-gray-700 mb-3">Select Difficulty Level (Passage is randomized):</h2>
+                <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 justify-around">
+                    
+                    <!-- Easy -->
+                    <label class="radio-label w-full" for="easy">
+                        <input type="radio" id="easy" name="difficulty" value="easy" class="hidden" checked>
+                        <div class="radio-tile p-3 border-2 border-indigo-200 rounded-lg text-center bg-white hover:bg-indigo-100">
+                            <span class="font-semibold text-green-600">Easy (1:30 min)</span>
+                            <p class="text-xs text-gray-500">Simple, everyday language.</p>
+                        </div>
+                    </label>
+
+                    <!-- Medium -->
+                    <label class="radio-label w-full" for="medium">
+                        <input type="radio" id="medium" name="difficulty" value="medium" class="hidden">
+                        <div class="radio-tile p-3 border-2 border-indigo-200 rounded-lg text-center bg-white hover:bg-indigo-100">
+                            <span class="font-semibold text-yellow-600">Medium (2:30 min)</span>
+                            <p class="text-xs text-gray-500">Business or academic topics.</p>
+                        </div>
+                    </label>
+
+                    <!-- Difficult -->
+                    <label class="radio-label w-full" for="difficult">
+                        <input type="radio" id="difficult" name="difficulty" value="difficult" class="hidden">
+                        <div class="radio-tile p-3 border-2 border-indigo-200 rounded-lg text-center bg-white hover:bg-indigo-100">
+                            <span class="font-semibold text-red-600">Difficult (3:00 min)</span>
+                            <p class="text-xs text-gray-500">Technical or complex terminology.</p>
+                        </div>
+                    </label>
+
+                </div>
+            </div>
+
+            <!-- Timer and Control Panel -->
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-8 border-b pb-4">
+                <div class="text-3xl font-bold text-gray-800 flex items-center mb-4 sm:mb-0">
+                    <svg class="w-6 h-6 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Time Remaining: <span id="timer" class="ml-2 text-indigo-600">00:00</span>
+                </div>
+                
+                <button id="startButton" class="w-full sm:w-auto px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition duration-150 shadow-md disabled:opacity-50" onclick="startTest()">
+                    Start Test
+                </button>
+                <button id="submitButton" class="hidden w-full sm:w-auto px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-150 shadow-md disabled:opacity-50" onclick="submitTranslation()" disabled>
+                    Submit Translation
+                </button>
+            </div>
+
+            <!-- Source Text Panel -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-700 mb-3">Source Text (English)</h2>
+                <div id="sourceText" class="p-5 bg-gray-50 border rounded-lg text-gray-800 leading-relaxed italic select-none">
+                    Select a difficulty and click 'Start Test' to reveal the passage and begin the timer.
+                </div>
+            </div>
+
+            <!-- Translation Input Panel -->
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-700 mb-3">Your Translation (Mandarin Chinese)</h2>
+                <textarea id="translationInput" rows="8" class="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 resize-none disabled:bg-gray-100" placeholder="Your translation will go here..." disabled></textarea>
+            </div>
+
+            <!-- Results Modal (Hidden by default) -->
+            <div id="resultsModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 hidden flex items-center justify-center p-4" onclick="closeModal(event)">
+                <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95" onclick="event.stopPropagation()">
+                    <div class="p-6 md:p-8">
+                        <h3 class="text-2xl font-bold text-indigo-600 mb-4 text-center border-b pb-2">Assessment Results</h3>
+                        
+                        <div class="space-y-4 mb-6">
+                            <!-- Speed Result -->
+                            <div class="bg-indigo-50 p-3 rounded-lg flex justify-between items-center">
+                                <span class="font-semibold text-gray-700">Time Taken:</span>
+                                <span id="timeResult" class="text-xl font-bold text-indigo-700"></span>
+                            </div>
+
+                            <!-- Word Count Metric -->
+                            <div class="bg-indigo-50 p-3 rounded-lg flex justify-between items-center">
+                                <span class="font-semibold text-gray-700">Words Per Minute (WPM):</span>
+                                <span id="wpmResult" class="text-xl font-bold text-indigo-700"></span>
+                            </div>
+
+                            <!-- Accuracy Result -->
+                            <div class="bg-green-50 p-3 rounded-lg flex justify-between items-center">
+                                <span class="font-semibold text-gray-700">Accuracy Score:</span>
+                                <span id="accuracyResult" class="text-2xl font-bold text-green-700"></span>
+                            </div>
+                        </div>
+
+                        <button class="w-full py-2 bg-indigo-500 text-white font-semibold rounded-lg hover:bg-indigo-600 transition duration-150" onclick="resetTest()">
+                            Translate Another Passage
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        // --- DATA: Passages are now arrays, and one will be randomly selected per test ---
+        const PASSAGES = {
+            'easy': [
+                {
+                    source: "The sun is bright today. We will go to the park with the children. They love to play games and eat ice cream.",
+                    reference: "今天的太阳很亮。我们会带孩子们去公园。他们喜欢玩游戏和吃冰淇淋。",
+                    timeLimit: 90 // 1 minute 30 seconds
+                },
+                {
+                    source: "My family always eats dinner together at six o'clock. We talk about our day and what we learned in school.",
+                    reference: "我的家人总是在六点一起吃晚饭。我们谈论我们的一天和在学校学到的东西。",
+                    timeLimit: 90
+                },
+                {
+                    source: "Luna is a small, gray cat who enjoys sleeping on the window sill. She often chases butterflies in the garden when the weather is warm.",
+                    reference: "露娜是一只灰色的小猫，喜欢睡在窗台上。天气暖和时，她经常在花园里追逐蝴蝶。",
+                    timeLimit: 90
+                }
+            ],
+            'medium': [
+                {
+                    source: "The rapid evolution of artificial intelligence continues to reshape industries around the world. Companies are investing heavily in new technologies to automate routine tasks and enhance productivity. The future of work will require a focus on adaptability and continuous learning.",
+                    reference: "人工智能的快速发展继续重塑着世界各地的行业。公司正在大力投资新技术，以实现日常任务的自动化并提高生产力。工作未来将需要注重适应性和持续学习。",
+                    timeLimit: 150 // 2 minutes 30 seconds
+                },
+                {
+                    source: "Renewable energy sources, such as wind and solar power, are essential for mitigating climate change and ensuring long-term energy security. Governments must implement policies that incentivize the adoption of sustainable infrastructure projects.",
+                    reference: "风能和太阳能等可再生能源对于缓解气候变化和确保长期能源安全至关重要。政府必须实施政策，激励可持续基础设施项目的采用。",
+                    timeLimit: 150
+                },
+                {
+                    source: "The annual Spring Festival, or Chinese New Year, is the most important holiday in China. It is a time for family reunions, traditional feasts, and honoring ancestors through various rituals.",
+                    reference: "每年一度的春节，即农历新年，是中国最重要的节日。这是一个家庭团聚、传统盛宴以及通过各种仪式祭奠祖先的时刻。",
+                    timeLimit: 150
+                }
+            ],
+            'difficult': [
+                {
+                    source: "Global supply chain resiliency is now a paramount concern for multinational corporations. The recent geopolitical shifts necessitate a re-evaluation of just-in-time inventory models in favor of localized, distributed manufacturing hubs to mitigate against unforeseen external shocks.",
+                    reference: "全球供应链的弹性已成为跨国公司首要关注的问题。最近的地缘政治转变要求重新评估即时库存模型，转而支持本地化、分散式的制造中心，以减轻意外的外部冲击。",
+                    timeLimit: 180 // 3 minutes 0 seconds
+                },
+                {
+                    source: "The legal principle of *stare decisis* dictates that courts must adhere to prior case law when adjudicating similar disputes, thereby ensuring judicial consistency and predictability within the common law system.",
+                    reference: "遵循先例的法律原则要求法院在裁决类似纠纷时必须遵守先前的判例法，从而确保普通法体系内的司法一致性和可预测性。",
+                    timeLimit: 180
+                },
+                {
+                    source: "In quantum mechanics, wave-particle duality describes the inability of subatomic entities to be fully reduced to either a classical wave or a discrete particle, representing a fundamental probabilistic nature of reality.",
+                    reference: "在量子力学中，波粒二象性描述了亚原子实体无法完全还原为经典的波或离散的粒子，这代表了现实固有的概率性质。",
+                    timeLimit: 180
+                }
+            ]
+        };
+
+        // --- DOM Elements ---
+        const sourceTextEl = document.getElementById('sourceText');
+        const translationInputEl = document.getElementById('translationInput');
+        const timerEl = document.getElementById('timer');
+        const startButton = document.getElementById('startButton');
+        const submitButton = document.getElementById('submitButton');
+        const resultsModal = document.getElementById('resultsModal');
+        const timeResultEl = document.getElementById('timeResult');
+        const accuracyResultEl = document.getElementById('accuracyResult');
+        const wpmResultEl = document.getElementById('wpmResult');
+        const difficultySelectorEl = document.getElementById('difficultySelector');
+
+        // --- State ---
+        let startTime = null;
+        let timerInterval = null;
+        let isTestRunning = false;
+        let currentSourceWordCount = 0; // Store word count of the current passage
+        let timeLimitSeconds = 0; // New state for the fixed time limit
+
+        // --- Utility Functions ---
+
+        /**
+         * Formats time in seconds to MM:SS string.
+         * @param {number} totalSeconds 
+         */
+        function formatTime(totalSeconds) {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        /**
+         * Simple Levenshtein distance calculation for string similarity.
+         * Used to give a robust measure of accuracy.
+         * @param {string} a 
+         * @param {string} b 
+         */
+        function levenshteinDistance(a, b) {
+            const matrix = [];
+            for (let i = 0; i <= b.length; i++) {
+                matrix[i] = [i];
+            }
+            for (let j = 0; j <= a.length; j++) {
+                matrix[0][j] = j;
+            }
+            for (let i = 1; i <= b.length; i++) {
+                for (let j = 1; j <= a.length; j++) {
+                    const cost = (a[j - 1] === b[i - 1]) ? 0 : 1;
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j] + 1,       // Deletion
+                        matrix[i][j - 1] + 1,       // Insertion
+                        matrix[i - 1][j - 1] + cost // Substitution
+                    );
+                }
+            }
+            return matrix[b.length][a.length];
+        }
+        
+        /**
+         * Calculates an accuracy score based on Levenshtein distance.
+         * @param {string} userText 
+         * @param {string} referenceText 
+         * @returns {string} Accuracy percentage string (e.g., "95.5%")
+         */
+        function calculateAccuracy(userText, referenceText) {
+            // Clean and normalize both texts for CJK comparison
+            // Removes common Chinese punctuation for better character-level comparison
+            const cleanUser = userText.trim().toLowerCase().replace(/[，。、？！；：]/g, '');
+            const cleanRef = referenceText.trim().toLowerCase().replace(/[，。、？！；：]/g, '');
+
+            // Use the longer string length for normalization. For CJK, counting characters is used for similarity.
+            const maxLen = Math.max(cleanUser.length, cleanRef.length);
+            
+            if (maxLen === 0) return "0.0%"; // Prevent division by zero if both are empty
+
+            const distance = levenshteinDistance(cleanUser, cleanRef);
+            
+            // Calculate accuracy: 1 - (Distance / Max Length)
+            const rawAccuracy = 1.0 - (distance / maxLen);
+            
+            // Convert to percentage and cap at 100%
+            const percentage = Math.min(100, (rawAccuracy * 100)).toFixed(1);
+
+            return `${percentage}%`;
+        }
+        
+        /**
+         * Calculates the word count of an English text.
+         * @param {string} text 
+         * @returns {number}
+         */
+        function calculateWordCount(text) {
+             return text.split(/\s+/).filter(word => word.length > 0).length;
+        }
+
+        // --- Main Logic ---
+
+        function updateTimer() {
+            if (!startTime || timeLimitSeconds === 0) return;
+
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const remaining = timeLimitSeconds - elapsed;
+
+            if (remaining <= 0) {
+                timerEl.textContent = '00:00';
+                stopTest();
+                // Submit automatically when time runs out, passing the total limit as time taken
+                submitTranslation(timeLimitSeconds);
+            } else {
+                // Update the display with remaining time
+                timerEl.textContent = formatTime(remaining);
+            }
+        }
+
+        /**
+         * Selects the current difficulty and randomly picks a passage from that level.
+         * @returns {object} The randomly selected passage object.
+         */
+        function getSelectedPassage() {
+            const selectedLevel = document.querySelector('input[name="difficulty"]:checked').value;
+            const levelPassages = PASSAGES[selectedLevel];
+            const randomIndex = Math.floor(Math.random() * levelPassages.length);
+            return levelPassages[randomIndex];
+        }
+
+        function startTest() {
+            if (isTestRunning) return;
+            
+            const passage = getSelectedPassage(); // Get a random passage
+            
+            // Get current word count and time limit
+            currentSourceWordCount = calculateWordCount(passage.source);
+            timeLimitSeconds = passage.timeLimit;
+            
+            // Reset state
+            translationInputEl.value = '';
+            timerEl.textContent = formatTime(timeLimitSeconds); // Display starting time
+            
+            // Set up UI
+            sourceTextEl.textContent = passage.source;
+            translationInputEl.disabled = false;
+            startButton.classList.add('hidden');
+            submitButton.classList.remove('hidden');
+            submitButton.disabled = false;
+            difficultySelectorEl.classList.add('opacity-50', 'pointer-events-none'); // Disable selector during test
+            
+            // Start Timer
+            startTime = Date.now();
+            isTestRunning = true;
+            timerInterval = setInterval(updateTimer, 1000);
+            translationInputEl.focus();
+        }
+
+        /**
+         * Stops the timer interval.
+         */
+        function stopTest() {
+            isTestRunning = false;
+            clearInterval(timerInterval);
+        }
+
+        /**
+         * Submits the translation and calculates results.
+         * @param {number | null} overrideTimeTaken - Use the time limit if submission was automatic (timer ran out).
+         */
+        function submitTranslation(overrideTimeTaken = null) {
+            stopTest();
+            
+            // Determine the time taken: 
+            // 1. If overrideTimeTaken is provided (from timer running out), use that.
+            // 2. Otherwise, calculate elapsed time since start.
+            const timeTaken = overrideTimeTaken !== null ? overrideTimeTaken : Math.floor((Date.now() - startTime) / 1000);
+            
+            const userText = translationInputEl.value;
+            const passage = getSelectedPassage();
+            
+            // Disable input and submit button
+            translationInputEl.disabled = true;
+            submitButton.disabled = true;
+
+            // 1. Calculate Accuracy
+            const accuracy = calculateAccuracy(userText, passage.reference);
+
+            // 2. Calculate Speed (WPM)
+            const minutes = timeTaken / 60;
+            // Use the currentSourceWordCount
+            const wpm = minutes > 0 ? (currentSourceWordCount / minutes).toFixed(1) : currentSourceWordCount;
+
+            // 3. Display Results
+            timeResultEl.textContent = formatTime(timeTaken);
+            wpmResultEl.textContent = wpm;
+            accuracyResultEl.textContent = accuracy;
+            
+            resultsModal.classList.remove('hidden');
+        }
+        
+        function closeModal(event) {
+            if (event.target === resultsModal) {
+                resultsModal.classList.add('hidden');
+            }
+        }
+
+        function resetTest() {
+            // Hide modal
+            resultsModal.classList.add('hidden');
+
+            // Reset UI and state
+            sourceTextEl.textContent = "Select a difficulty and click 'Start Test' to reveal the passage and begin the timer.";
+            translationInputEl.value = '';
+            translationInputEl.disabled = true;
+            timerEl.textContent = '00:00';
+
+            startButton.classList.remove('hidden');
+            submitButton.classList.add('hidden');
+            submitButton.disabled = true;
+            difficultySelectorEl.classList.remove('opacity-50', 'pointer-events-none'); // Enable selector
+
+            startTime = null;
+            isTestRunning = false;
+            clearInterval(timerInterval);
+            currentSourceWordCount = 0;
+            timeLimitSeconds = 0; // Reset limit
+        }
+        
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', resetTest);
+
+    </script>
+</body>
+</html>
